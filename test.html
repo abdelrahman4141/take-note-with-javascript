@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learn JavaScript</title>
+    <!-- <link rel="stylesheet" href="main.css" /> -->
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .container {
+        width: 500px;
+        margin: 20px auto;
+      }
+      .form {
+        background-color: #eee;
+        border-radius: 6px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+      }
+      .input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        flex: 1;
+      }
+      .input:focus {
+        outline: none;
+      }
+      .add {
+        border: none;
+        background-color: #f44336;
+        color: white;
+        padding: 10px;
+        border-radius: 6px;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+      .notelist {
+        background-color: #eee;
+        margin-top: 20px;
+        border-radius: 6px;
+        padding: 20px;
+      }
+      .notelist .note {
+        background-color: white;
+        padding: 10px;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.3s;
+        cursor: pointer;
+        border: 1px solid #ccc;
+      }
+      .notelist .note:not(:last-child) {
+        margin-bottom: 15px;
+      }
+      .notelist .note:hover {
+        background-color: #f7f7f7;
+      }
+      .notelist .note.done {
+        opacity: 0.5;
+      }
+      .notelist .note .delete {
+        font-weight: bold;
+        font-size: 10px;
+        background-color: red;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .notelist .note .edit {
+        font-weight: bold;
+        font-size: 10px;
+        background-color: rgb(0, 76, 255);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <form class="form">
+        <input type="text" class="input" required />
+        <input type="submit" class="add" value="Add Note" />
+        <input type="hidden" id="editInput" />
+      </form>
+      <div class="notelist"></div>
+    </div>
+
+    <script>
+      const formDiv = document.querySelector(".form");
+      const inputText = document.querySelector(".input");
+      const submitBtn = document.querySelector(".add");
+      const notesDiv = document.querySelector(".notelist");
+      const deleteBtn = document.querySelector(".delete");
+      const editBtn = document.querySelector(".edit");
+      const hiddenEdit = document.querySelector("#editInput");
+      //create user constractor
+      class Log {
+        constructor(id, text) {
+          this.id = id;
+          this.text = text;
+        }
+        // function add data to the page
+        addData() {
+          Log.showHtml(this.id, this.text);
+
+          // console.log(task);
+          return this;
+        }
+        //function for create html element
+        static showHtml(id, text) {
+          const task = document.createElement("li");
+          task.classList.add("note");
+          task.setAttribute("data-id", id);
+          task.innerHTML = `${text}
+    <span>
+    <button data-id="${id}" class="delete">Delete</button>
+    <button data-id="${id}" class="edit">edit</button>
+    </span>`;
+          notesDiv.appendChild(task);
+        }
+        storeData() {
+          const allData = JSON.parse(localStorage.getItem("notelist")) ?? [];
+          allData.push({ id: this.id, text: this.text });
+          localStorage.setItem("notelist", JSON.stringify(allData));
+        }
+        static showAllData() {
+          if (localStorage.getItem("notelist")) {
+            JSON.parse(localStorage.getItem("notelist")).forEach((item) => {
+              Log.showHtml(item.id, item.text);
+            });
+          }
+        }
+        update(id) {
+          const newItem = { id: id, text: this.text };
+          const updateData = JSON.parse(localStorage.getItem("notelist")).map(
+            (item) => {
+              if (item.id == id) {
+                return newItem;
+              }
+              return item;
+            }
+          );
+          localStorage.setItem("notelist", JSON.stringify(updateData));
+        }
+      }
+      Log.showAllData();
+      formDiv.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!hiddenEdit.value) {
+          let id = Math.floor(Math.random() * 100000);
+          //call function to create log
+          let newNote = new Log(id, inputText.value);
+          newNote.addData().storeData();
+          inputText.value = "";
+        } else {
+          const id = hiddenEdit.value;
+          const newNote = new Log(id, inputText.value);
+          //new function for update
+          newNote.update(id);
+          submitBtn.value = "Add Note";
+          submitBtn.style.backgroundColor = "#f44336";
+          inputText.value = "";
+          notesDiv.innerHTML = "";
+          Log.showAllData();
+        }
+        //create uniqe id
+      });
+
+      // delete button functionality
+      notesDiv.addEventListener("click", (e) => {
+        if (e.target.classList.contains("delete")) {
+          const id = e.target.getAttribute("data-id");
+          const items = JSON.parse(localStorage.getItem("notelist"));
+          const newData = items.filter((item) => item.id !== Number(id));
+          localStorage.setItem("notelist", JSON.stringify(newData));
+          e.target.parentElement.parentElement.remove();
+        } else if (e.target.classList.contains("edit")) {
+          const id = e.target.getAttribute("data-id");
+
+          const items = JSON.parse(localStorage.getItem("notelist"));
+          const editData = items.filter((item) => item.id == Number(id));
+          inputText.value = editData[0].text;
+          submitBtn.value = "Edit This Item";
+          hiddenEdit.value = id;
+          submitBtn.style.backgroundColor = "blue";
+        }
+      });
+    </script>
+  </body>
+</html>
